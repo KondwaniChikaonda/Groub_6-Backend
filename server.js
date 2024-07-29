@@ -1,0 +1,1078 @@
+const express = require('express');
+
+const mysql = require('mysql2');
+
+
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const bcrypt = require('bcrypt');
+
+
+
+
+const app = express();
+const port = 3001;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+
+
+
+
+
+
+
+
+
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '', 
+    database: 'loginapp',
+    
+});
+
+db.connect((err) => {
+    if (err) {
+        console.log('Error connecting to database:', err);
+        return;
+    }
+    console.log('Connected to database');
+});
+
+
+
+
+
+
+
+// Middleware to verify the token and extract the user ID
+const authenticateToken = (req, res, next) => {
+  const token = req.headers['authorization'];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, 'secret', (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    console.log('Decoded user from token:', user);
+    next();
+  });
+};
+
+
+
+
+
+
+
+
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+
+    db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, password], (err, result) => {
+        if (err) {
+            res.status(500).send('Server error');
+            return;
+        }
+        res.status(200).send('User registered');
+    });
+});
+
+
+
+
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    db.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, result) => {
+        if (err) {
+            res.status(500).send('Server error');
+            return;
+        }
+        if (result.length === 0) {
+            res.status(401).send('Login failed');
+            return;
+        }
+
+        const user = result[0];
+        const token = jwt.sign({ id: user.id }, 'secret', {
+            expiresIn: 86400 // 20 mins
+        });
+
+        res.status(200).send({ auth: true, token });
+    });
+});
+
+
+
+
+
+
+app.get('/user', (req, res) => {
+    // Extract token from request headers
+    const token = req.headers.authorization.split(' ')[1];
+    // Verify and decode token (example using jwt.verify)
+    jwt.verify(token, 'secret', (err, decoded) => {
+        if (err) {
+            return res.status(401).send('Unauthorized');
+        }
+        // Find user in database based on decoded token (e.g., user ID)
+        db.query('SELECT * FROM users WHERE id = ?', [decoded.id], (err, result) => {
+            if (err) {
+                return res.status(500).send('Server error');
+            }
+            if (!result[0]) {
+                return res.status(404).send('User not found');
+            }
+            // Return user data
+            const user = {
+                id: result[0].id,
+                username: result[0].username,
+                email: result[0].email,
+                dob: result[0].dob,
+                gender: result[0].gender,
+                phoneNumber: result[0].phoneNumber
+            };
+            res.status(200).json(user);
+        });
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Get all users
+app.get('/users', (req, res) => {
+    const sql = 'SELECT * FROM users';
+    db.query(sql, (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    });
+  });
+  
+  // Add new user
+  app.post('/users', (req, res) => {
+    
+    const { username, password, email, dob, gender } = req.body;
+
+    const birthday = new Date(dob);
+    const today = new Date();
+
+    const age = today.getFullYear() - birthday.getFullYear();
+
+   
+    if(age>=18) {
+
+    const sql = 'INSERT INTO users (username, password, email, dob, gender) VALUES (?, ?, ?, ?, ?)';
+    db.query(sql, [username, password, email, dob, gender], (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    
+    });
+}
+  });
+  
+  
+
+  // Edit user
+  app.put('/users/:id', (req, res) => {
+    const { id } = req.params;
+    const { username, password, email, dob, gender } = req.body;
+    console.log(dob);
+
+
+    const birthday = new Date(dob);
+    const today = new Date();
+
+    const age = today.getFullYear() - birthday.getFullYear();
+
+
+
+
+
+    
+    if(!password){
+
+
+      if(age>=18){
+        const sql = 'UPDATE users SET username = ?, email = ?, dob = ?, gender = ? WHERE id = ?';
+        db.query(sql, [username, email, dob, gender, id], (err, result) => {
+          if (err) throw err;
+          res.send(result);
+        });
+    }
+    else{
+
+
+
+      if(age>=18){
+        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, dob = ?, gender = ? WHERE id = ?';
+        db.query(sql, [username, password, email, dob, gender, id], (err, result) => {
+          if (err) throw err;
+          res.send(result);
+        });
+    }
+    }
+
+    }
+ 
+  });
+  
+  // Delete user
+  app.delete('/users/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = 'DELETE FROM users WHERE id = ?';
+    db.query(sql, [id], (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    });
+  });
+  
+  
+
+
+
+
+  //Get all products
+  app.get('/products', (req, res) => {
+    const sql = `
+      SELECT p.*, u.phoneNumber, u.email AS email, u.username AS owner_username
+      FROM product p
+      LEFT JOIN users u ON p.owner_id = u.id
+      ORDER BY created_at DESC
+    `;
+    db.query(sql, (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    });
+  });
+
+
+
+
+
+
+
+  //Get all products
+  app.get('/houses', (req, res) => {
+    const sql = `
+      SELECT p.*, u.phoneNumber, u.email AS email, u.username AS owner_username
+      FROM accommodation p
+      LEFT JOIN users u ON p.owner_id = u.id
+      ORDER BY created_at DESC
+    `;
+    db.query(sql, (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    });
+  });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/messages',authenticateToken, async (req, res) => {
+  const { recipientId, description } = req.body;
+
+  if (!recipientId || !description) {
+    return res.status(400).json({ error: 'Recipient ID and description are required' });
+  }
+
+  const senderId = req.user.id; // Assuming you have user information in req.user
+
+  try {
+    // Insert into messages table
+    const [result] = await db.execute('INSERT INTO messages (sender_id, recipient_id, description) VALUES (?, ?, ?)', [senderId, recipientId, description]);
+
+    // Optionally, you can send back the inserted message
+    const insertedMessage = {
+      id: result.insertId,
+      sender_id: senderId,
+      recipient_id: recipientId,
+      description: description,
+      created_at: new Date().toISOString() // Adjust as per your timestamp format
+    };
+
+    res.status(201).json(insertedMessage);
+  } catch (err) {
+    console.error('Error inserting message:', err);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+// Assuming this is your existing endpoint setup
+app.get('/messages', authenticateToken, (req, res) => {
+  const ownerId = req.user.id; // Get owner_id from authenticated user
+  const query = `
+    SELECT messages.*, users.username as sender_username
+    FROM messages
+    INNER JOIN users ON messages.sender_id = users.id
+    WHERE messages.recipient_id = ?
+    ORDER BY messages.sender_id, messages.created_at DESC
+  `;
+
+  db.query(query, [ownerId], (err, results) => {
+    if (err) {
+      console.error('Error fetching messages:', err);
+      return res.status(500).send(err);
+    }
+
+    // Organize messages by sender
+    const groupedMessages = results.reduce((acc, message) => {
+      const senderId = message.sender_id;
+      if (!acc[senderId]) {
+        acc[senderId] = {
+          senderId: senderId,
+          senderUsername: message.sender_username,
+          messages: []
+        };
+      }
+      acc[senderId].messages.push(message);
+      return acc;
+    }, {});
+
+    res.json(Object.values(groupedMessages)); // Send grouped messages data as JSON response
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//GETTING THE BLOG
+app.get('/blogs', (req, res) => {
+  const query = 'SELECT * FROM blog ORDER BY created_at DESC';
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching blogs:', err);
+      return res.status(500).send('Error fetching blogs');
+    }
+    res.json(results);
+  });
+});
+
+
+
+
+
+
+
+// Endpoint to get products
+app.get('/my-product', authenticateToken, (req, res) => {
+  const query = 'SELECT * FROM product WHERE owner_id = ?';
+  db.query(query, [req.user.id], (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+  // Assuming you have a route like this in your Node.js backend
+
+app.get('/products', async (req, res) => {
+  const searchTerm = req.query.search || '';
+  try {
+    let products = await Product.findAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.like]: `%${searchTerm}%` } },
+          { description: { [Op.like]: `%${searchTerm}%` } },
+          { owner_username: { [Op.like]: `%${searchTerm}%` } },
+          { email: { [Op.like]: `%${searchTerm}%` } }
+        ]
+      }
+    });
+
+    // Transforming products to include likes count
+    products = products.map(product => ({
+      ...product.toJSON(),
+      likes: product.likes || 0 // Default to 0 if likes are null
+    }));
+
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Example code for handling like updates
+
+app.post('/products/:id/like',authenticateToken, (req, res) => {
+  const productId = req.params.id;
+
+  const query = `UPDATE product SET likes = likes + 1 WHERE id = ?`;
+  db.query(query, [productId], (err, result) => {
+    if (err) {
+      console.error('Error liking product:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.status(200).json({ message: 'Product liked successfully' });
+  });
+});
+
+
+
+
+//handling likes of the product  by users 
+
+
+app.post('/products/:id/like', authenticateToken, async (req, res) => {
+  const productId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    // Check if the user already liked the product
+    const [rows] = await db.query(
+      'SELECT * FROM product_likes WHERE user_id = ? AND product_id = ?',
+      [userId, productId]
+    );
+
+    if (rows.length > 0) {
+      // User already liked the product, so remove the like
+      await db.query(
+        'DELETE FROM product_likes WHERE user_id = ? AND product_id = ?',
+        [userId, productId]
+      );
+      // Decrement the like count in the products table
+      await db.query(
+        'UPDATE products SET likes = likes - 1 WHERE id = ?',
+        [productId]
+      );
+      res.status(200).send({ liked: false });
+    } else {
+      // User hasn't liked the product yet, so add the like
+      await db.query(
+        'INSERT INTO product_likes (user_id, product_id) VALUES (?, ?)',
+        [userId, productId]
+      );
+      // Increment the like count in the products table
+      await db.query(
+        'UPDATE products SET likes = likes + 1 WHERE id = ?',
+        [productId]
+      );
+      res.status(200).send({ liked: true });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server error');
+  }
+});
+
+
+// For handling shopping activities   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/orders', (req, res) => {
+  const { productId,Owner,buyerId } = req.body; // Assuming you pass userId along with productId
+  const query = 'INSERT INTO cart (product_id, owner_id, buyer_id) VALUES (?, ?, ?)';
+  
+  db.query(query, [productId, Owner, buyerId], (err, result) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    else{
+      res.status(200).json({ message: 'Product ordered Successfully!' });
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+app.get('/my-cart', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  // First query to get cart details
+  const cartQuery = `
+    SELECT cart.*, product.*, users.username, users.phoneNumber, users.email 
+    FROM cart 
+    JOIN product ON cart.product_id = product.id 
+    JOIN users ON product.owner_id = users.id 
+    WHERE cart.buyer_id = ?
+  `;
+
+  // Second query to get product count and total price
+  const anotherQuery = `
+    SELECT c.buyer_id, COUNT(c.product_id) AS product_count, SUM(p.price) AS total_price 
+    FROM cart c 
+    JOIN product p ON c.product_id = p.id 
+    WHERE c.buyer_id = ?
+    GROUP BY c.buyer_id
+  `;
+
+  db.query(cartQuery, [userId], (err, cartResult) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+
+    db.query(anotherQuery, [userId], (err, summaryResult) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      // Combine the results
+      const response = {
+        cart: cartResult,
+        summary: summaryResult[0] // There should be only one row for the summary query
+      };
+
+      res.json(response);
+    });
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+app.delete('/my-cart/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+
+  const sql = 'DELETE FROM cart WHERE product_id = ? AND buyer_id = ?';
+  db.query(sql, [id, req.user.id], (err, result) => {
+    if (err) throw err;
+    res.send({ message: 'Product deleted' });
+  });
+});
+
+
+
+
+
+
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
+
+
+
+
+
+
+
+
+// Endpoint to handle file upload
+
+app.post('/upload/:id', authenticateToken, upload.single('picture'), (req, res) => {
+
+      const { id } = req.params;
+ 
+      console.log(req.file);
+      const { filename } = req.file;
+      
+      // Update file information into the database
+      const query = 'UPDATE users SET picture = ? WHERE id = ?';
+      db.query(query, [filename, id], (err, result) => {
+        if (err) throw err;
+        res.send('File uploaded and saved to database.');
+      });
+ 
+});
+
+// Serve static files
+app.use('/uploads', express.static('uploads'));
+
+
+
+
+
+
+
+const fs = require('fs');
+const uploadsDir = './uploads';
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+
+
+
+
+
+
+app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) => {
+  const { name, price, description, status } = req.body;
+  const picture = req.file ? req.file.path : null;
+  const ownerId = req.user.id; // Extracted from token
+
+  const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(sql, [name, price, description, picture, status, ownerId], (err, result) => {
+    if (err) throw err;
+    res.send({ id: result.insertId, name, price, description, picture, status });
+  });
+});
+
+app.put('/my-product/:id', authenticateToken, upload.single('picture'), (req, res) => {
+  const { id } = req.params;
+  const { name, price, description, status } = req.body;
+  const picture = req.file ? req.file.path : null;
+    
+ if(!picture){
+     
+  const sql = 'UPDATE product SET name = ?, price = ?, description = ?, status = ? WHERE id = ? AND owner_id = ?';
+  db.query(sql, [name, price, description,status, id, req.user.id], (err, result) => {
+    if (err) throw err;
+    res.send({ id, name, price, description, status });
+  });
+
+ }
+  else{
+
+    const sql = 'UPDATE product SET name = ?, price = ?, description = ?, picture = ?, status = ? WHERE id = ? AND owner_id = ?';
+    db.query(sql, [name, price, description, picture, status, id, req.user.id], (err, result) => {
+      if (err) throw err;
+      res.send({ id, name, price, description, picture, status });
+    });
+
+  }
+
+
+});
+
+app.delete('/my-product/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+
+  const sql = 'DELETE FROM product WHERE id = ? AND owner_id = ?';
+  db.query(sql, [id, req.user.id], (err, result) => {
+    if (err) throw err;
+    res.send({ message: 'Product deleted' });
+  });
+});
+
+
+
+
+
+
+
+
+// Update Picture
+app.post('/users/:id/picture', authenticateToken, upload.single('picture'), async (req, res) => {
+  const userId = req.params.id;
+  const picture = req.file ? req.file.path : null;
+  console.log(picture);
+
+  try {
+    // Update user record with the new picture path
+    await db.query('UPDATE users SET picture = ? WHERE id = ?', [picture, userId]);
+    res.status(200).json({ message: 'Profile picture updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update profile picture' });
+  }
+});
+
+// Remove Picture
+app.delete('/users/:id/picture', authenticateToken, async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Update user record to remove picture
+    await db.query('UPDATE users SET picture = NULL WHERE id = ?', [userId]);
+    res.status(200).json({ message: 'Profile picture removed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove profile picture' });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/my-house', authenticateToken, upload.single('picture'), (req, res) => {
+  const { name, price, description, status, location } = req.body;
+  const picture = req.file ? req.file.path : null;
+  const ownerId = req.user.id; // Extracted from token
+
+  const sql = 'INSERT INTO accommodation (name, price, description, picture, status, location, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  db.query(sql, [name, price, description, picture, status, location, ownerId], (err, result) => {
+    if (err) throw err;
+    res.send({ id: result.insertId, name, price, description, picture, status, location });
+  });
+});
+
+app.put('/my-house/:id', authenticateToken, upload.single('picture'), (req, res) => {
+  const { id } = req.params;
+  const { name, price, description, status, location } = req.body;
+  const picture = req.file ? req.file.path : null;
+    
+ if(!picture){
+     
+  const sql = 'UPDATE accommodation SET name = ?, price = ?, description = ?, status = ?, location = ? WHERE id = ? AND owner_id = ?';
+  db.query(sql, [name, price, description,status, location, id, req.user.id], (err, result) => {
+    if (err) throw err;
+    res.send({ id, name, price, description, status, location });
+  });
+
+ }
+  else{
+
+    const sql = 'UPDATE accommodation SET name = ?, price = ?, description = ?, picture = ?, status = ?, location = ? WHERE id = ? AND owner_id = ?';
+    db.query(sql, [name, price, description, picture, status, location, id, req.user.id], (err, result) => {
+      if (err) throw err;
+      res.send({ id, name, price, description, picture, status, location });
+    });
+
+  }
+
+
+});
+
+
+
+app.delete('/my-house/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+
+  const sql = 'DELETE FROM accommodation WHERE id = ? AND owner_id = ?';
+  db.query(sql, [id, req.user.id], (err, result) => {
+    if (err) throw err;
+    res.send({ message: 'Product deleted' });
+  });
+});
+
+
+
+app.get('/my-house', authenticateToken, (req, res) => {
+  const query = 'SELECT * FROM accommodation WHERE owner_id = ?';
+  db.query(query, [req.user.id], (err, results) => {
+    if (err) {
+      console.error('Error fetching products:', err);
+      res.status(500).send('Error fetching products');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const JWT_SECRET = 'secret';
+const MAILTRAP_SMTP_SERVER = 'smtp.gmail.com';
+const MAILTRAP_SMTP_PORT = 587; // Mailtrap typically uses 587 for TLS
+const MAILTRAP_USERNAME = 'chikaonda06@gmail.com';
+const MAILTRAP_PASSWORD = 'xxdj zoxk kiwg yupk';
+
+
+
+
+const generateResetToken = (email) => {
+  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '10mins' });
+  return token;
+};
+
+const transporter = nodemailer.createTransport({
+  host: MAILTRAP_SMTP_SERVER,
+  port: MAILTRAP_SMTP_PORT,
+  auth: {
+    user: MAILTRAP_USERNAME,
+    pass: MAILTRAP_PASSWORD
+  }
+});
+
+app.post('/api/users/reset-password-request', (req, res) => {
+  const { email } = req.body;
+
+  db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database query error', err });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const token = generateResetToken(email);
+    const expiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    db.query('UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?', [token, expiry, email], (err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Database update error', err });
+      }
+
+      const mailOptions = {
+        from: MAILTRAP_USERNAME, // This can be any email
+        to: email,
+        subject: 'Password Reset',
+        text: `You requested a password reset. Click the link to reset your password: http://192.168.100.109:3000/ResetPassword?token=${token}`
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        console.log(email);
+        if (error) {
+          console.error('Error sending email:', error);
+          return res.status(500).json({ message: 'Error sending email', error });
+        }
+        console.log('Email sent:', info.response);
+        res.status(200).json({ message: 'Password reset email sent' });
+      });
+    });
+  });
+});
+
+app.post('/api/users/reset-password', (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+
+    db.query('SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expiry > ?', [email, token, new Date()], (err, results) => {
+      if (err) {
+        return res.status(500).json({ message: 'Database query error', err });
+      }
+
+      if (results.length === 0) {
+        return res.status(400).json({ message: 'Invalid or expired token' });
+      }
+
+      db.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE email = ?', [newPassword, email], (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Database update error', err });
+        }
+
+        res.status(200).json({ message: 'Password reset successful' });
+      });
+    });
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid or expired token', error });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const otps = {}; // Store OTPs in-memory for simplicity (consider a more persistent storage in production)
+
+app.post('/send-otp', (req, res) => {
+    const { username, password, email, dob, gender, phoneNumber } = req.body;
+
+
+    
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+    otps[email] = otp;
+
+    const mailOptions = {
+        from:   MAILTRAP_USERNAME,
+        to: email,
+        subject: 'Your OTP Code From Waiona!',
+        text: `Welcome to Waiona Market Please Enter Your OTP Code To Start Our services ${otp}`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error('Error sending email:', error);
+            res.status(500).send({ success: false, message: 'Error sending OTP' });
+        } else {
+            res.send({ success: true, message: 'OTP sent successfully' });
+        }
+    });
+});
+
+app.post('/verify-otp', (req, res) => {
+    const { email, otp } = req.body;
+    const { username, password, dob, gender, phoneNumber } = req.body;
+    console.log(otps[email]);
+
+    if (otps[email] === otp) {
+        delete otps[email]; // Remove OTP after successful verification
+
+        // Insert user into database
+        db.query('INSERT INTO users (username, password, email, dob, gender, phoneNumber) VALUES (?, ?, ?, ?, ?, ?)', [username, password, email, dob, gender, phoneNumber], (err, result) => {
+            if (err) {
+                console.error('Error inserting user:', err);
+                res.status(500).send({ success: false, message: 'Server error' });
+            } else {
+                res.send({ success: true, message: 'User signed up successfully' });
+            }
+        });
+    } else {
+        res.send({ success: false, message: 'Invalid OTP' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
