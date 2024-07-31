@@ -632,6 +632,97 @@ app.get('/my-cart', authenticateToken, (req, res) => {
 
 
 
+
+app.get('/my-notice', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  // First query to get cart details
+  const cartQuery = `
+  SELECT cart.*, product.*, users.username, users.phoneNumber, users.email 
+  FROM cart 
+  JOIN product ON cart.product_id = product.id 
+  JOIN users ON cart.buyer_id = users.id 
+  WHERE cart.owner_id = ?`;
+
+  // Second query to get product count and total price
+  const anotherQuery = `
+    SELECT c.buyer_id, COUNT(c.product_id) AS product_count, SUM(p.price) AS total_price 
+    FROM cart c 
+    JOIN product p ON c.product_id = p.id 
+    WHERE c.owner_id = ?
+    GROUP BY c.owner_id
+  `;
+
+  db.query(cartQuery, [userId], (err, cartResult) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+
+    db.query(anotherQuery, [userId], (err, summaryResult) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      // Combine the results
+      const response = {
+        cart: cartResult,
+        summary: summaryResult[0] // There should be only one row for the summary query
+      };
+
+      res.json(response);
+    });
+  });
+});
+
+
+
+
+
+
+
+
+app.get('/check-cart',(req, res) => {
+  const { product_id, buyer_id } = req.query;
+
+  const query = 'SELECT * FROM cart WHERE product_id = ? AND buyer_id = ?';
+
+  db.query(query, [product_id, buyer_id], (err, results) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ message: 'Database query error', err });
+    }
+
+    if (results.length === 0) {
+      return res.status(200).json({ exists: false });
+    }
+
+    return res.status(200).json({ exists: true });
+  });
+});
+
+
+
+
+
+
+app.delete('/my-notice/:id', (req, res) => {
+  const { id } = req.params;
+  const { buyer } = req.query;
+
+  const sql = 'DELETE FROM cart WHERE product_id = ? AND buyer_id = ?';
+  db.query(sql, [id, buyer], (err, result) => {
+    if (err) throw err;
+    res.send({ message: 'Product deleted' });
+  });
+});
+
+
+
+
+
+
+
+
 app.delete('/my-cart/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
 
