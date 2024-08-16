@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 
 
@@ -27,10 +28,10 @@ app.use(bodyParser.json());
 
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '', 
-    database: 'loginapp',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS, 
+    database: process.env.DB_NAME,
     
 });
 
@@ -100,7 +101,7 @@ app.post('/login', (req, res) => {
 
         const user = result[0];
         const token = jwt.sign({ id: user.id }, 'secret', {
-            expiresIn: 86400 // 20 mins
+            expiresIn: 259200 // 20 mins
         });
 
         res.status(200).send({ auth: true, token });
@@ -204,6 +205,8 @@ app.get('/users', (req, res) => {
     const { id } = req.params;
     const { username, password, email, dob, gender } = req.body;
     console.log(dob);
+    console.log(password);
+    console.log(id);
 
 
     const birthday = new Date(dob);
@@ -212,11 +215,8 @@ app.get('/users', (req, res) => {
     const age = today.getFullYear() - birthday.getFullYear();
 
 
-
-
-
     
-    if(!password){
+    if(password){
 
 
       if(age>=18){
@@ -242,6 +242,10 @@ app.get('/users', (req, res) => {
     }
  
   });
+
+
+
+
   
   // Delete user
   app.delete('/users/:id', (req, res) => {
@@ -348,7 +352,6 @@ app.post('/messages',authenticateToken, async (req, res) => {
 
 
 
-
 // Assuming this is your existing endpoint setup
 app.get('/messages', authenticateToken, (req, res) => {
   const ownerId = req.user.id; // Get owner_id from authenticated user
@@ -357,7 +360,7 @@ app.get('/messages', authenticateToken, (req, res) => {
     FROM messages
     INNER JOIN users ON messages.sender_id = users.id
     WHERE messages.recipient_id = ?
-    ORDER BY messages.sender_id, messages.created_at DESC
+    ORDER BY messages.sender_id, messages.created_at ASC
   `;
 
   db.query(query, [ownerId], (err, results) => {
@@ -376,15 +379,19 @@ app.get('/messages', authenticateToken, (req, res) => {
           messages: []
         };
       }
-      acc[senderId].messages.push(message);
+      acc[senderId].messages.push({
+        id: message.id,
+        description: message.description,
+        sender_id: message.sender_id,
+        sender_username: message.sender_username,
+        created_at: message.created_at
+      });
       return acc;
     }, {});
 
     res.json(Object.values(groupedMessages)); // Send grouped messages data as JSON response
   });
 });
-
-
 
 
 
@@ -426,7 +433,7 @@ app.get('/blogs', (req, res) => {
 
 // Endpoint to get products
 app.get('/my-product', authenticateToken, (req, res) => {
-  const query = 'SELECT * FROM product WHERE owner_id = ?';
+  const query = 'SELECT * FROM product WHERE owner_id = ? ORDER BY created_at DESC';
   db.query(query, [req.user.id], (err, results) => {
     if (err) {
       console.error('Error fetching products:', err);
@@ -474,84 +481,10 @@ app.get('/products', async (req, res) => {
   }
 });
 
-// Example code for handling like updates
 
-app.post('/products/:id/like',authenticateToken, (req, res) => {
-  const productId = req.params.id;
-
-  const query = `UPDATE product SET likes = likes + 1 WHERE id = ?`;
-  db.query(query, [productId], (err, result) => {
-    if (err) {
-      console.error('Error liking product:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.status(200).json({ message: 'Product liked successfully' });
-  });
-});
-
-
-
-
-//handling likes of the product  by users 
-
-
-app.post('/products/:id/like', authenticateToken, async (req, res) => {
-  const productId = req.params.id;
-  const userId = req.user.id;
-
-  try {
-    // Check if the user already liked the product
-    const [rows] = await db.query(
-      'SELECT * FROM product_likes WHERE user_id = ? AND product_id = ?',
-      [userId, productId]
-    );
-
-    if (rows.length > 0) {
-      // User already liked the product, so remove the like
-      await db.query(
-        'DELETE FROM product_likes WHERE user_id = ? AND product_id = ?',
-        [userId, productId]
-      );
-      // Decrement the like count in the products table
-      await db.query(
-        'UPDATE products SET likes = likes - 1 WHERE id = ?',
-        [productId]
-      );
-      res.status(200).send({ liked: false });
-    } else {
-      // User hasn't liked the product yet, so add the like
-      await db.query(
-        'INSERT INTO product_likes (user_id, product_id) VALUES (?, ?)',
-        [userId, productId]
-      );
-      // Increment the like count in the products table
-      await db.query(
-        'UPDATE products SET likes = likes + 1 WHERE id = ?',
-        [productId]
-      );
-      res.status(200).send({ liked: true });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
-  }
-});
 
 
 // For handling shopping activities   
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -991,11 +924,12 @@ app.get('/my-house', authenticateToken, (req, res) => {
 
 
 
-const JWT_SECRET = 'secret';
-const MAILTRAP_SMTP_SERVER = 'smtp.gmail.com';
-const MAILTRAP_SMTP_PORT = 587; // Mailtrap typically uses 587 for TLS
-const MAILTRAP_USERNAME = 'chikaonda06@gmail.com';
-const MAILTRAP_PASSWORD = 'xxdj zoxk kiwg yupk';
+const JWT_SECRET = process.env.JWT_SECRET ;
+const MAILTRAP_SMTP_SERVER = process.env.MAILTRAP_SMTP_SERVER;
+const MAILTRAP_SMTP_PORT = process.env.MAILTRAP_SMTP_PORT; // Mailtrap typically uses 587 for TLS
+const MAILTRAP_USERNAME = process.env.MAILTRAP_USERNAME;
+const MAILTRAP_PASSWORD = process.env.MAILTRAP_PASSWORD;
+
 
 
 
