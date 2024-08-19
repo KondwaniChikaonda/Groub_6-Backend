@@ -352,6 +352,12 @@ app.post('/messages',authenticateToken, async (req, res) => {
 
 
 
+
+
+
+
+
+
 // Assuming this is your existing endpoint setup
 app.get('/messages', authenticateToken, (req, res) => {
   const ownerId = req.user.id; // Get owner_id from authenticated user
