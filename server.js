@@ -38,16 +38,29 @@ const db = mysql.createConnection({
     
 });
 
-db.connect((err) => {
-    if (err) {
-        console.log('Error connecting to database:', err);
-        return;
-    }
-    console.log('Connected to database');
-});
+
+function handleDisconnect() {
+         db.connect((err) => {
+           if (err) {
+                 console.log('Error connecting to database:', err);
+                return;
+          }
+       console.log('Connected to database');
+       });
+
+       db.on('error', function(err) {
+        console.error('Database error:', err);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            console.log('Reconnecting to the database...');
+            handleDisconnect(); // Reconnect if the connection is closed
+        } else {
+            throw err;
+        }
+    });
 
 
-
+  }
+  handleDisconnect();
 
 
 
