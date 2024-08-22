@@ -64,6 +64,10 @@ const authenticateToken = (req, res, next) => {
 
 
 
+app.get('/', (req, res) => {
+  res.send('Hello, World!');
+});
+
 
 
 
@@ -109,7 +113,7 @@ app.post('/login', (req, res) => {
 
 
 
-app.get('/', (req, res) => {
+app.get('/user', (req, res) => {
     // Extract token from request headers
     const token = req.headers.authorization.split(' ')[1];
     // Verify and decode token (example using jwt.verify)
