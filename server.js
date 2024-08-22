@@ -57,7 +57,7 @@ const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) return res.sendStatus(401);
 
-  jwt.verify(token, 'secret', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
     req.user = user;
     console.log('Decoded user from token:', user);
@@ -103,7 +103,7 @@ app.post('/login', (req, res) => {
         }
 
         const user = result[0];
-        const token = jwt.sign({ id: user.id }, 'secret', {
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
             expiresIn: 259200 // 20 mins
         });
 
@@ -120,7 +120,7 @@ app.get('/user', (req, res) => {
     // Extract token from request headers
     const token = req.headers.authorization.split(' ')[1];
     // Verify and decode token (example using jwt.verify)
-    jwt.verify(token, 'secret', (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
             return res.status(401).send('Unauthorized');
         }
