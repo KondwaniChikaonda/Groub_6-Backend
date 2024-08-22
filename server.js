@@ -56,6 +56,7 @@ db.connect((err) => {
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) return res.sendStatus(401);
+  console.log(process.env.JWT_SECRET);
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
@@ -206,25 +207,15 @@ app.get('/users', (req, res) => {
   // Edit user
   app.put('/users/:id', (req, res) => {
     const { id } = req.params;
-    const { username, password, email, dob, gender } = req.body;
-    console.log(dob);
+    const { username, password, email,gender } = req.body;
     console.log(password);
     console.log(id);
-
-
-    const birthday = new Date(dob);
-    const today = new Date();
-
-    const age = today.getFullYear() - birthday.getFullYear();
-
 
     
     if(password){
 
-
-      if(age>=18){
-        const sql = 'UPDATE users SET username = ?, email = ?, dob = ?, gender = ? WHERE id = ?';
-        db.query(sql, [username, email, dob, gender, id], (err, result) => {
+        const sql = 'UPDATE users SET username = ?, email = ?, gender = ? WHERE id = ?';
+        db.query(sql, [username, email, gender, id], (err, result) => {
           if (err) throw err;
           res.send(result);
         });
@@ -233,18 +224,16 @@ app.get('/users', (req, res) => {
 
 
 
-      if(age>=18){
+      
         const sql = 'UPDATE users SET username = ?, password = ?, email = ?, dob = ?, gender = ? WHERE id = ?';
-        db.query(sql, [username, password, email, dob, gender, id], (err, result) => {
+        db.query(sql, [username, password, email, gender, id], (err, result) => {
           if (err) throw err;
           res.send(result);
         });
     }
     }
 
-    }
- 
-  });
+  );
 
 
 
