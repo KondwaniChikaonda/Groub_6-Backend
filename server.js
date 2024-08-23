@@ -21,9 +21,22 @@ app.use(bodyParser.json());
 
 
 
-const upload = multer({ storage: multer.memoryStorage() }); // Store in memory temporarily
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
 
 
+
+
+// Serve static files
+app.use('/uploads', express.static('uploads'));
 
 
 
@@ -680,6 +693,7 @@ app.delete('/my-cart/:id', authenticateToken, (req, res) => {
     res.send({ message: 'Product deleted' });
   });
 });
+
 
 
 
