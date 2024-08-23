@@ -48,7 +48,7 @@ app.use('/uploads', express.static('uploads'));
 
 
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS, 
@@ -60,28 +60,20 @@ const db = mysql.createConnection({
 });
 
 
-function handleDisconnect() {
-         db.connect((err) => {
-           if (err) {
-                 console.log('Error connecting to database:', err);
-                return;
-          }
-       console.log('Connected to database');
-       });
 
-       db.on('error', function(err) {
-        console.error('Database error:', err);
-        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-            console.log('Reconnecting to the database...');
-            handleDisconnect(); // Reconnect if the connection is closed
-        } else {
-            throw err;
-        }
-    });
+// Promisify for Node.js async/await
+const promiseDb = db.promise();
 
-
-  }
-  handleDisconnect();
+// Function to execute queries using the pool
+const executeQuery = async (query, params) => {
+    try {
+        const [rows] = await promiseDb.query(query, params);
+        return rows;
+    } catch (err) {
+        console.error('Error executing query:', err);
+        throw err; // Optionally handle the error or notify the system
+    }
+};
 
 
 
@@ -139,7 +131,7 @@ app.post('/login', (req, res) => {
 
         const user = result[0];
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-            expiresIn: 259200 // 20 
+            expiresIn: 259200 // 20 mins
         });
 
         res.status(200).send({ auth: true, token });
