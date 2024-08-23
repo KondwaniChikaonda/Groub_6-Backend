@@ -858,7 +858,7 @@ app.delete('/users/:id/picture', authenticateToken, async (req, res) => {
 app.post('/my-house', authenticateToken, upload.single('picture'), (req, res) => {
   const { name, price, description, status, location } = req.body;
   const picture = req.file ? req.file.path : null;
-  const ownerId = req.user.id; // Extracted from token
+  const ownerId = req.user.id; 
 
   const sql = 'INSERT INTO accommodation (name, price, description, picture, status, location, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
   db.query(sql, [name, price, description, picture, status, location, ownerId], (err, result) => {
