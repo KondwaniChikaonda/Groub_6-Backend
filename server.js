@@ -1001,6 +1001,8 @@ app.post('/api/users/reset-password', (req, res) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const email = decoded.email;
+    console.log(email);
+    console.log(decoded);
 
     db.query('SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expiry > ?', [email, token, new Date()], (err, results) => {
       if (err) {
