@@ -7,6 +7,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
 
 const multer = require('multer');
@@ -20,24 +22,27 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/images');
-  },
+// Set up Cloudinary storage for Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  folder: 'uploads/images', // Folder in Cloudinary
+  allowedFormats: ['jpg', 'png'],
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    cb(null, Date.now() + '-' + file.originalname);
   },
 });
 
 const upload = multer({ storage: storage });
 
-
-
-
 // Serve static files
 app.use('/uploads', express.static('uploads'));
-
 
 
 
@@ -713,8 +718,8 @@ app.post('/upload/:id', authenticateToken, upload.single('picture'), (req, res) 
 
       const { id } = req.params;
  
-      console.log(req.file);
-      const { filename } = req.file;
+      console.log(req.file.path);
+      const filename  = req.file.path;
       
       // Update file information into the database
       const query = 'UPDATE users SET picture = ? WHERE id = ?';
