@@ -238,7 +238,7 @@ app.get('/users', (req, res) => {
     console.log(id);
 
     
-    if(password){
+    if(!password){
 
         const sql = 'UPDATE users SET username = ?, email = ?, gender = ? WHERE id = ?';
         db.query(sql, [username, email, gender, id], (err, result) => {
