@@ -139,7 +139,7 @@ app.post('/login', (req, res) => {
 
         const user = result[0];
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-            expiresIn: 259200 // 20 mins
+            expiresIn: 259200 // 20 
         });
 
         res.status(200).send({ auth: true, token });
