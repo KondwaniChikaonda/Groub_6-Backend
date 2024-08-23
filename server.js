@@ -9,7 +9,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-
+const multer = require('multer');
+const path = require('path');
 
 
 const app = express();
@@ -18,7 +19,22 @@ const port = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
 
+const upload = multer({ storage: storage });
+
+
+
+
+// Serve static files
+app.use('/uploads', express.static('uploads'));
 
 
 
@@ -683,20 +699,6 @@ app.delete('/my-cart/:id', authenticateToken, (req, res) => {
 
 
 
-const multer = require('multer');
-const path = require('path');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/images');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({ storage: storage });
-
 
 
 
@@ -722,9 +724,6 @@ app.post('/upload/:id', authenticateToken, upload.single('picture'), (req, res) 
       });
  
 });
-
-// Serve static files
-app.use('/uploads', express.static('uploads'));
 
 
 
