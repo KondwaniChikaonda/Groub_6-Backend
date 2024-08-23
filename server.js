@@ -251,7 +251,7 @@ app.get('/users', (req, res) => {
 
 
       
-        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, dob = ?, gender = ? WHERE id = ?';
+        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ? WHERE id = ?';
         db.query(sql, [username, password, email, gender, id], (err, result) => {
           if (err) throw err;
           res.send(result);
