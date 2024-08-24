@@ -164,9 +164,9 @@ app.get('/user', (req, res) => {
                 id: result[0].id,
                 username: result[0].username,
                 email: result[0].email,
-                dob: result[0].dob,
                 gender: result[0].gender,
-                phoneNumber: result[0].phoneNumber
+                phoneNumber: result[0].phoneNumber,
+                description: result[0].description
             };
             res.status(200).json(user);
         });
