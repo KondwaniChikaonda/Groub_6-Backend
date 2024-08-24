@@ -119,7 +119,7 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    db.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, result) => {
+    db.query('SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ?', [username,username, password], (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
