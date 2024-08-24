@@ -1046,7 +1046,7 @@ app.post('/api/users/reset-password', (req, res) => {
 const otps = {}; // Store OTPs in-memory for simplicity (consider a more persistent storage in production)
 
 app.post('/send-otp', (req, res) => {
-    const { username, password, email, dob, gender, phoneNumber } = req.body;
+    const { username, password, email, gender, phoneNumber } = req.body;
 
 
     
@@ -1072,14 +1072,14 @@ app.post('/send-otp', (req, res) => {
 
 app.post('/verify-otp', (req, res) => {
     const { email, otp } = req.body;
-    const { username, password, dob, gender, phoneNumber } = req.body;
+    const { username, password, gender, phoneNumber } = req.body;
     console.log(otps[email]);
 
     if (otps[email] === otp) {
         delete otps[email]; // Remove OTP after successful verification
 
         // Insert user into database
-        db.query('INSERT INTO users (username, password, email, dob, gender, phoneNumber) VALUES (?, ?, ?, ?, ?, ?)', [username, password, email, dob, gender, phoneNumber], (err, result) => {
+        db.query('INSERT INTO users (username, password, email,gender, phoneNumber) VALUES (?, ?, ?, ?, ?)', [username, password, email, gender, phoneNumber], (err, result) => {
             if (err) {
                 console.error('Error inserting user:', err);
                 res.status(500).send({ success: false, message: 'Server error' });
