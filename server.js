@@ -233,15 +233,15 @@ app.get('/users', (req, res) => {
   // Edit user
   app.put('/users/:id', (req, res) => {
     const { id } = req.params;
-    const { username, password, email,gender, phoneNumber} = req.body;
+    const { username, password, email,gender, phoneNumber, description} = req.body;
     console.log(password);
     console.log(id);
 
     
     if(!password){
 
-        const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ? WHERE id = ?';
-        db.query(sql, [username, email, gender, phoneNumber, id], (err, result) => {
+        const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ?  WHERE id = ?';
+        db.query(sql, [username, email, gender, phoneNumber, description,id], (err, result) => {
           if (err) throw err;
           res.send(result);
         });
@@ -251,8 +251,8 @@ app.get('/users', (req, res) => {
 
 
       
-        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber =? WHERE id = ?';
-        db.query(sql, [username, password, email, gender, phoneNumber, id], (err, result) => {
+        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber =?, description = ?  WHERE id = ?';
+        db.query(sql, [username, password, email, gender, phoneNumber,description, id], (err, result) => {
           if (err) throw err;
           res.send(result);
         });
