@@ -543,7 +543,7 @@ app.get('/my-cart', authenticateToken, (req, res) => {
 
   // First query to get cart details
   const cartQuery = `
-    SELECT cart.*, product.*, users.username, users.phoneNumber, users.email 
+    SELECT cart.*, product.*, users.username, users.description AS userDescription, users.phoneNumber, users.email 
     FROM cart 
     JOIN product ON cart.product_id = product.id 
     JOIN users ON product.owner_id = users.id 
