@@ -1097,6 +1097,9 @@ app.put('/verify-otp-email', authenticateToken, (req, res) => {
   const userId = req.user.id; // Assuming the `authenticateToken` middleware attaches the user ID to `req.user`
 
   console.log(otps[email]);
+  console.log("Verify email"+email);
+  console.log("Verify otp"+otp);
+  console.log("Verify id"+userId);
 
   if (otps[email] === otp) {
     delete otps[email]; // Remove OTP after successful verification
