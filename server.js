@@ -1089,9 +1089,7 @@ app.post('/send-otp-email',(req, res) => {
 
 
 
-
-
-app.put('/verify-otp-email/:id', authenticateToken, (req, res) => {
+app.put('/verify-otp-email/:id', (req, res) => {
   const { email, otp } = req.body;
   const userId = req.params.id; // Get the user ID from the URL parameter
 
@@ -1102,7 +1100,6 @@ app.put('/verify-otp-email/:id', authenticateToken, (req, res) => {
   });
 
   if (otps[email] === otp) {
-    // OTP matches, proceed with email update
     delete otps[email]; // Remove OTP after successful verification
 
     // Update user's email in the database
