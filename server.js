@@ -22,6 +22,14 @@ app.use(cors());
 app.use(bodyParser.json());
 
 
+
+
+
+
+
+
+
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -1044,6 +1052,98 @@ app.post('/api/users/reset-password', (req, res) => {
 
 
 const otps = {}; // Store OTPs in-memory for simplicity (consider a more persistent storage in production)
+
+
+
+
+
+
+
+
+
+
+app.post('/send-otp-email',(req, res) => {
+  const {email} = req.body;
+
+  console.log("email only "+email);
+  
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+  otps[email] = otp;
+
+  const mailOptions = {
+      from:   MAILTRAP_USERNAME,
+      to: email,
+      subject: 'Your OTP Code From Waiona!',
+      text: `Welcome to Waiona Market Please Enter Your OTP Code To change your email ${otp}`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+          console.error('Error sending email:', error);
+          res.status(500).send({ success: false, message: 'Error sending OTP' });
+      } else {
+          res.send({ success: true, message: 'OTP sent successfully' });
+      }
+  });
+});
+
+
+
+
+
+
+app.put('/verify-otp-email', authenticateToken, (req, res) => {
+  const { email, otp } = req.body;
+  const userId = req.user.id; // Assuming the `authenticateToken` middleware attaches the user ID to `req.user`
+
+  console.log(otps[email]);
+
+  if (otps[email] === otp) {
+    delete otps[email]; // Remove OTP after successful verification
+
+    // Update user's email in the database
+    db.query('UPDATE users SET email = ? WHERE id = ?', [email, userId], (err, result) => {
+      if (err) {
+        console.error('Error updating user email:', err);
+        res.status(500).send({ success: false, message: 'Server error' });
+      } else {
+        res.send({ success: true, message: 'User signed up successfully' });
+      }
+    });
+  } else {
+    res.send({ success: false, message: 'Invalid OTP' });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.post('/send-otp', (req, res) => {
     const { username, password, email, gender, phoneNumber } = req.body;
