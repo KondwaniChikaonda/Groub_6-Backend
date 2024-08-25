@@ -1091,33 +1091,38 @@ app.post('/send-otp-email',(req, res) => {
 
 
 
-
-app.put('/verify-otp-email', authenticateToken, (req, res) => {
+app.put('/verify-otp-email/:id', authenticateToken, (req, res) => {
   const { email, otp } = req.body;
-  const userId = req.user.id; // Assuming the `authenticateToken` middleware attaches the user ID to `req.user`
+  const userId = req.params.id; // Get the user ID from the URL parameter
 
-  console.log(otps[email]);
-  console.log("Verify email"+email);
-  console.log("Verify otp"+otp);
-  console.log("Verify id"+userId);
+  console.log('Received OTP for email verification:', {
+    email,
+    otp,
+    userId,
+  });
 
   if (otps[email] === otp) {
+    // OTP matches, proceed with email update
     delete otps[email]; // Remove OTP after successful verification
 
     // Update user's email in the database
     db.query('UPDATE users SET email = ? WHERE id = ?', [email, userId], (err, result) => {
       if (err) {
         console.error('Error updating user email:', err);
-        res.status(500).send({ success: false, message: 'Server error' });
+        return res.status(500).send({ success: false, message: 'Server error' });
+      }
+
+      if (result.affectedRows > 0) {
+        res.send({ success: true, message: 'Email updated successfully.' });
       } else {
-        res.send({ success: true, message: 'User signed up successfully' });
+        res.status(404).send({ success: false, message: 'User not found.' });
       }
     });
   } else {
-    res.send({ success: false, message: 'Invalid OTP' });
+    console.log('Invalid OTP for email:', email);
+    res.send({ success: false, message: 'Invalid OTP.' });
   }
 });
-
 
 
 
