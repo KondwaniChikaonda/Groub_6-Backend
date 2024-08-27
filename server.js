@@ -242,6 +242,18 @@ app.get('/users', (req, res) => {
   app.put('/users/:id', (req, res) => {
     const { id } = req.params;
     const { username, password, email,gender, phoneNumber, description} = req.body;
+          
+
+
+    function removeSpaces(str) {
+      return str.replace(/\s+/g, '');
+    }  
+   
+    const phoneWithoutSpaces = removeSpaces(phoneNumber);
+
+    console.log(phoneWithoutSpaces);
+
+
     console.log(password);
     console.log(id);
 
@@ -249,7 +261,7 @@ app.get('/users', (req, res) => {
     if(!password){
 
         const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ?  WHERE id = ?';
-        db.query(sql, [username, email, gender, phoneNumber, description,id], (err, result) => {
+        db.query(sql, [username, email, gender, phoneWithoutSpaces, description,id], (err, result) => {
           if (err) throw err;
           res.send(result);
         });
