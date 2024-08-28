@@ -186,7 +186,7 @@ app.get('/user', (req, res) => {
 
 app.get('/count-users', async (req, res) => {
   try {
-    const [result] = await db.query('SELECT COUNT(*) as userCount FROM users');
+    const [result] = await db.query('SELECT COUNT(*) AS userCount FROM users');
     if (!result || result.length === 0) {
       return res.status(404).json({ message: 'No users found.' });
     }
