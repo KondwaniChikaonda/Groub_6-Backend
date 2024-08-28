@@ -184,12 +184,14 @@ app.get('/user', (req, res) => {
 
 
 
-app.get('/users/count', (req, res) => {
-  const sql = 'SELECT COUNT(*) AS userCount FROM users';
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    res.send(result);
-  });
+app.get('/count-users', async (req, res) => {
+  try {
+    const [result] = await db.query('SELECT COUNT(*) as userCount FROM users');
+    res.json({ count: result[0].userCount });
+  } catch (err) {
+    console.error('Error fetching user count:', err);
+    res.status(500).json({ message: 'Error fetching user count' });
+  }
 });
 
 
