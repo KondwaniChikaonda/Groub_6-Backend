@@ -451,7 +451,7 @@ app.delete('/messages/:id', async (req, res) => {
 
   try {
     // Check if the message belongs to the authenticated user
-    const [rows] = await db.query('SELECT * FROM messages WHERE id = ? AND (sender_id = ?)', [messageId,senderId]);
+    const [rows] = await db.execute('SELECT * FROM messages WHERE id = ? AND (sender_id = ?)', [messageId,senderId]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Message not found or you do not have permission to delete this message.' });
