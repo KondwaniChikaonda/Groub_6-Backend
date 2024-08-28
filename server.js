@@ -441,6 +441,24 @@ app.get('/messages', authenticateToken, (req, res) => {
 
 
 
+ 
+  // Delete user
+  app.delete('/messages/:id', (req, res) => {
+    const { messageId } = req.params;
+    const sql = 'DELETE FROM messages WHERE id = ?';
+    db.query(sql, [messageId], (err, result) => {
+      if (err) throw err;
+      res.send(result);
+    });
+  });
+
+
+
+
+
+
+
+
 
 
 
