@@ -2,7 +2,6 @@ const express = require('express');
 
 const mysql = require('mysql2');
 
-
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -442,26 +441,24 @@ app.get('/messages', authenticateToken, (req, res) => {
 
 
 
-
-app.delete('/messages/:id', (req, res) => {
+// Delete message route
+app.delete('/messages/:id', async (req, res) => {
   const messageId = req.params.id;
-
-  const {senderId} = req.body;
-
+  const { senderId } = req.body;
 
   console.log(senderId);
   console.log(messageId);
 
   try {
     // Check if the message belongs to the authenticated user
-    const message =  db.query('SELECT * FROM messages WHERE id = ? AND (sender_id = ? OR recipient_id = ?)', [messageId, senderId, senderId]);
+    const [rows] = await db.query('SELECT * FROM messages WHERE id = ? AND (sender_id = ?)', [messageId,senderId]);
 
-    if (message.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ message: 'Message not found or you do not have permission to delete this message.' });
     }
 
     // Delete the message
-       db.query('DELETE FROM messages WHERE id = ?', [messageId]);
+    await db.query('DELETE FROM messages WHERE id = ?', [messageId]);
 
     return res.status(200).json({ message: 'Message deleted successfully.' });
   } catch (err) {
@@ -469,7 +466,6 @@ app.delete('/messages/:id', (req, res) => {
     return res.status(500).json({ message: 'An error occurred while deleting the message.' });
   }
 });
-
 
 
 
