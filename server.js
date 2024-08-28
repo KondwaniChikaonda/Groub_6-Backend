@@ -443,13 +443,18 @@ app.get('/messages', authenticateToken, (req, res) => {
 
 
 
-app.delete('/messages/:id', authenticateToken, async (req, res) => {
+app.delete('/messages/:id', async (req, res) => {
   const messageId = req.params.id;
-  const userId = req.user.id; // Assuming `authenticateToken` attaches `user` to `req`
+
+  const {senderId} = req.body;
+
+
+  console.log(senderId);
+  console.log(messageId);
 
   try {
     // Check if the message belongs to the authenticated user
-    const message = await db.query('SELECT * FROM messages WHERE id = ? AND (senderId = ? OR recipientId = ?)', [messageId, userId, userId]);
+    const message = await db.query('SELECT * FROM messages WHERE id = ? AND (senderId = ? OR recipientId = ?)', [messageId, senderId, senderId]);
 
     if (message.length === 0) {
       return res.status(404).json({ message: 'Message not found or you do not have permission to delete this message.' });
