@@ -746,6 +746,33 @@ app.delete('/my-cart/:id', authenticateToken, (req, res) => {
 
 
 
+app.get('/cart-notification-count', (req, res) => {
+  const ownerId = req.query.owner_id;  // or however you pass the owner ID
+
+  const anotherQuery = `
+    SELECT c.buyer_id, COUNT(c.product_id) AS product_count, SUM(p.price) AS total_price 
+    FROM cart c 
+    JOIN product p ON c.product_id = p.id 
+    WHERE c.owner_id = ?
+    GROUP BY c.owner_id
+  `;
+
+  db.query(anotherQuery, [ownerId], (err, results) => {
+    if (err) {
+      console.error('Error fetching cart notifications:', err);
+      return res.status(500).json({ message: 'Error fetching cart notifications' });
+    }
+
+    const notificationCount = results.length > 0 ? results[0].product_count : 0;
+    res.json({ count: notificationCount });
+  });
+});
+
+
+
+
+
+
 
 
 
