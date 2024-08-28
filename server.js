@@ -444,7 +444,7 @@ app.get('/messages', authenticateToken, (req, res) => {
  
   // Delete user
   app.delete('/messages/:id', (req, res) => {
-    const { messageId } = req.params;
+    const messageId  = req.params.id;;
 
 
     console.log("delete message "+ messageId);
