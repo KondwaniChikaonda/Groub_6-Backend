@@ -184,21 +184,13 @@ app.get('/user', (req, res) => {
 
 
 
-
-app.get('/users/count', async (req, res) => {
-  try {
-    // Execute the query to count all rows in the users table
-    const [rows] = await db.query('SELECT COUNT(*) AS userCount FROM users');
-
-    // Send the count as a JSON response
-    return res.status(200).json({ count: rows[0].userCount });
-  } catch (err) {
-    console.error('Error counting users:', err);
-    return res.status(500).json({ message: 'An error occurred while counting users.' });
-  }
+app.get('/users/count', (req, res) => {
+  const sql = 'SELECT COUNT(*) AS userCount FROM users';
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+    res.send(result);
+  });
 });
-
-
 
 
 
