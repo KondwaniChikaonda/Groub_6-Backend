@@ -12,6 +12,9 @@ require('dotenv').config();
 
 const multer = require('multer');
 const path = require('path');
+const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
+
+
 
 
 const app = express();
@@ -122,30 +125,43 @@ app.post('/register', (req, res) => {
 
 
 
-
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    db.query('SELECT * FROM users WHERE email = ? AND password = ?', [username, password], (err, result) => {
+    // Query to find the user by email
+    db.query('SELECT * FROM users WHERE email = ?', [username], async (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
         }
+
         if (result.length === 0) {
-            res.status(401).send('Login failed');
+            res.status(401).send('Login failed: User not found');
             return;
         }
 
         const user = result[0];
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-            expiresIn: 259200 // 20 mins
-        });
 
-        res.status(200).send({ auth: true, token });
+        try {
+            // Compare the provided password with the stored hashed password
+            const passwordMatch = await bcrypt.compare(password, user.password);
+
+            if (!passwordMatch) {
+                res.status(401).send('Login failed: Incorrect password');
+                return;
+            }
+
+            // Generate a JWT token
+            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+                expiresIn: 1200 // 20 minutes in seconds
+            });
+
+            res.status(200).send({ auth: true, token });
+        } catch (compareErr) {
+            res.status(500).send('Server error');
+        }
     });
 });
-
-
 
 
 
@@ -231,6 +247,11 @@ app.get('/users', (req, res) => {
     });
   });
   
+
+
+
+
+
   // Add new user
   app.post('/users', (req, res) => {
     
@@ -241,16 +262,13 @@ app.get('/users', (req, res) => {
 
     const age = today.getFullYear() - birthday.getFullYear();
 
-   
-    if(age>=18) {
-
     const sql = 'INSERT INTO users (username, password, email, dob, gender) VALUES (?, ?, ?, ?, ?)';
     db.query(sql, [username, password, email, dob, gender], (err, result) => {
       if (err) throw err;
       res.send(result);
     
     });
-}
+
   });
   
   
@@ -1291,29 +1309,43 @@ app.post('/send-otp', (req, res) => {
     });
 });
 
-app.post('/verify-otp', (req, res) => {
-    const { email, otp } = req.body;
-    const { username, password, gender, phoneWithoutSpaces} = req.body;
+
+
+
+
+app.post('/verify-otp', async (req, res) => {
+    const { email, otp, username, password, gender, phoneWithoutSpaces } = req.body;
+
     console.log(otps[email]);
 
     if (otps[email] === otp) {
         delete otps[email]; // Remove OTP after successful verification
 
-        // Insert user into database
-        db.query('INSERT INTO users (username, password, email,gender, phoneNumber) VALUES (?, ?, ?, ?, ?)', [username, password, email, gender,phoneWithoutSpaces], (err, result) => {
-            if (err) {
-                console.error('Error inserting user:', err);
-                res.status(500).send({ success: false, message: 'Server error' });
-            } else {
-                res.send({ success: true, message: 'User signed up successfully' });
-            }
-        });
+        try {
+            // Hash the password before storing it
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+            // Insert user into the database with the hashed password
+            db.query('INSERT INTO users (username, password, email, gender, phoneNumber) VALUES (?, ?, ?, ?, ?)', 
+                [username, hashedPassword, email, gender, phoneWithoutSpaces], 
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting user:', err);
+                        res.status(500).send({ success: false, message: 'Server error' });
+                    } else {
+                        res.send({ success: true, message: 'User signed up successfully' });
+                    }
+                }
+            );
+        } catch (err) {
+            console.error('Error hashing password:', err);
+            res.status(500).send({ success: false, message: 'Server error' });
+        }
     } else {
         res.send({ success: false, message: 'Invalid OTP' });
     }
 });
-
-
 
 
 
