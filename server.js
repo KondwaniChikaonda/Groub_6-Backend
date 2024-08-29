@@ -820,12 +820,38 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
   const picture = req.file ? req.file.path : null;
   const ownerId = req.user.id; // Extracted from token
 
-  const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
-  db.query(sql, [name, price, description, picture, status, ownerId], (err, result) => {
-    if (err) throw err;
-    res.send({ id: result.insertId, name, price, description, picture, status });
-  });
+
+
+
+  if(!picture){
+
+          const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724925668/os9lroggekfwhvbxv7pl.png';
+
+    const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, myPicture, status, ownerId], (err, result) => {
+      if (err) throw err;
+      res.send({ id: result.insertId, name, price, description, myPicture, status });
+    });
+
+  }
+
+  else{
+    const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, picture, status, ownerId], (err, result) => {
+      if (err) throw err;
+      res.send({ id: result.insertId, name, price, description, picture, status });
+    });
+
+  }
+
+
+ 
 });
+
+
+
+
+
 
 app.put('/my-product/:id', authenticateToken, upload.single('picture'), (req, res) => {
   const { id } = req.params;
