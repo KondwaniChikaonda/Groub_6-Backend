@@ -1122,7 +1122,7 @@ app.post('/api/users/reset-password-request', (req, res) => {
         from: MAILTRAP_USERNAME, // This can be any email
         to: email,
         subject: 'Password Reset',
-        text: `You requested a password reset. Click the link to reset your password: www.waiiona.store/ResetPassword?token=${token}`
+        text: `You requested a password reset. Click the link to reset your password: https://www.waiiona.store/ResetPassword?token=${token}`
       };
 
       transporter.sendMail(mailOptions, (error, info) => {
