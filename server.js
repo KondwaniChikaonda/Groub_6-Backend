@@ -825,7 +825,7 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
 
   if(!picture){
 
-          const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724925668/os9lroggekfwhvbxv7pl.png';
+          const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724928038/rgtan5tzrqf4xfimgxnb.png';
 
     const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
     db.query(sql, [name, price, description, myPicture, status, ownerId], (err, result) => {
@@ -953,12 +953,35 @@ app.post('/my-house', authenticateToken, upload.single('picture'), (req, res) =>
   const picture = req.file ? req.file.path : null;
   const ownerId = req.user.id; 
 
-  const sql = 'INSERT INTO accommodation (name, price, description, picture, status, location, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
-  db.query(sql, [name, price, description, picture, status, location, ownerId], (err, result) => {
-    if (err) throw err;
-    res.send({ id: result.insertId, name, price, description, picture, status, location });
-  });
+
+  if(!picture){
+
+    const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724928038/rgtan5tzrqf4xfimgxnb.png';
+
+    const sql = 'INSERT INTO accommodation (name, price, description, picture, status, location, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, myPicture, status, location, ownerId], (err, result) => {
+      if (err) throw err;
+      res.send({ id: result.insertId, name, price, description, myPicture, status, location });
+    });
+
+  }
+
+  else {
+
+
+    const sql = 'INSERT INTO accommodation (name, price, description, picture, status, location, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, picture, status, location, ownerId], (err, result) => {
+      if (err) throw err;
+      res.send({ id: result.insertId, name, price, description, picture, status, location });
+    });
+
+
+  }
+
+
 });
+
+
 
 app.put('/my-house/:id', authenticateToken, upload.single('picture'), (req, res) => {
   const { id } = req.params;
