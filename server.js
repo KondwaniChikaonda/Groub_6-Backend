@@ -1025,7 +1025,7 @@ app.delete('/my-house/:id', authenticateToken, (req, res) => {
 
 
 app.get('/my-house', authenticateToken, (req, res) => {
-  const query = 'SELECT * FROM accommodation WHERE owner_id = ?';
+  const query = 'SELECT * FROM accommodation WHERE owner_id = ? ORDER BY created_at DESC';
   db.query(query, [req.user.id], (err, results) => {
     if (err) {
       console.error('Error fetching products:', err);
