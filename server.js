@@ -274,47 +274,48 @@ app.get('/users', (req, res) => {
   
 
   // Edit user
-  app.put('/users/:id', (req, res) => {
-    const { id } = req.params;
-    const { username, password, email,gender, phoneNumber, description} = req.body;
-          
-
-
-    function removeSpaces(str) {
-      return str.replace(/\s+/g, '');
-    }  
-   
-    const phoneWithoutSpaces = removeSpaces(phoneNumber);
-
-    console.log(phoneWithoutSpaces);
-
-
-    console.log(password);
-    console.log(id);
-
-    
-    if(!password){
-
-        const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ?  WHERE id = ?';
-        db.query(sql, [username, email, gender, phoneWithoutSpaces, description,id], (err, result) => {
-          if (err) throw err;
-          res.send(result);
-        });
-    }
-    else{
-
-
-
-      
-        const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber =?, description = ?  WHERE id = ?';
-        db.query(sql, [username, password, email, gender, phoneNumber,description, id], (err, result) => {
-          if (err) throw err;
-          res.send(result);
-        });
-    }
-    }
-
-  );
+  app.put('/users/:id', async (req, res) => {
+      const { id } = req.params;
+      const { username, password, email, gender, phoneNumber, description } = req.body;
+  
+      function removeSpaces(str) {
+          return str.replace(/\s+/g, '');
+      }  
+     
+      const phoneWithoutSpaces = removeSpaces(phoneNumber);
+  
+      console.log(phoneWithoutSpaces);
+      console.log(password);
+      console.log(id);
+  
+      // If password is not provided, update the user without changing the password
+      if (!password) {
+          const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ? WHERE id = ?';
+          db.query(sql, [username, email, gender, phoneWithoutSpaces, description, id], (err, result) => {
+              if (err) {
+                  return res.status(500).json({ message: 'Database update error', err });
+              }
+              res.send(result);
+          });
+      } else {
+          try {
+              // Hash the password if it's provided
+              const saltRounds = 10;
+              const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+              const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber = ?, description = ? WHERE id = ?';
+              db.query(sql, [username, hashedPassword, email, gender, phoneWithoutSpaces, description, id], (err, result) => {
+                  if (err) {
+                      return res.status(500).json({ message: 'Database update error', err });
+                  }
+                  res.send(result);
+              });
+          } catch (err) {
+              return res.status(500).json({ message: 'Error hashing password', err });
+          }
+      }
+  });
+  
 
 
 
