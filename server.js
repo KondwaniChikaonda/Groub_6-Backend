@@ -1137,37 +1137,57 @@ app.post('/api/users/reset-password-request', (req, res) => {
   });
 });
 
-app.post('/api/users/reset-password', (req, res) => {
-  const { token, newPassword } = req.body;
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const email = decoded.email;
-    console.log(email);
-    console.log(decoded);
 
-    db.query('SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expiry > ?', [email, token, new Date()], (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: 'Database query error', err });
-      }
 
-      if (results.length === 0) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-      }
 
-      db.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE email = ?', [newPassword, email], (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Database update error', err });
-        }
 
-        res.status(200).json({ message: 'Password reset successful' });
-      });
-    });
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid or expired token', error });
-  }
+
+
+
+
+
+
+
+app.post('/api/users/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const email = decoded.email;
+        console.log(email);
+        console.log(decoded);
+
+        db.query('SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expiry > ?', [email, token, new Date()], async (err, results) => {
+            if (err) {
+                return res.status(500).json({ message: 'Database query error', err });
+            }
+
+            if (results.length === 0) {
+                return res.status(400).json({ message: 'Invalid or expired token' });
+            }
+
+            try {
+                // Hash the new password before updating it in the database
+                const saltRounds = 10;
+                const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+                // Update the user's password in the database
+                db.query('UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE email = ?', [hashedPassword, email], (err) => {
+                    if (err) {
+                        return res.status(500).json({ message: 'Database update error', err });
+                    }
+
+                    res.status(200).json({ message: 'Password reset successful' });
+                });
+            } catch (hashError) {
+                return res.status(500).json({ message: 'Error hashing password', hashError });
+            }
+        });
+    } catch (error) {
+        res.status(400).json({ message: 'Invalid or expired token', error });
+    }
 });
-
 
 
 
