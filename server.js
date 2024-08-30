@@ -189,7 +189,8 @@ app.get('/user', (req, res) => {
                 email: result[0].email,
                 gender: result[0].gender,
                 phoneNumber: result[0].phoneNumber,
-                description: result[0].description
+                description: result[0].description,
+                location: result[0].location
             };
             res.status(200).json(user);
         });
@@ -276,7 +277,7 @@ app.get('/users', (req, res) => {
   // Edit user
   app.put('/users/:id', async (req, res) => {
       const { id } = req.params;
-      const { username, password, email, gender, phoneNumber, description } = req.body;
+      const { username, password, email, gender, phoneNumber, description,location} = req.body;
   
       function removeSpaces(str) {
           return str.replace(/\s+/g, '');
@@ -290,8 +291,8 @@ app.get('/users', (req, res) => {
   
       // If password is not provided, update the user without changing the password
       if (!password) {
-          const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ? WHERE id = ?';
-          db.query(sql, [username, email, gender, phoneWithoutSpaces, description, id], (err, result) => {
+          const sql = 'UPDATE users SET username = ?, email = ?, gender = ?, phoneNumber = ?, description = ?, location = ? WHERE id = ?';
+          db.query(sql, [username, email, gender, phoneWithoutSpaces, description, location, id], (err, result) => {
               if (err) {
                   return res.status(500).json({ message: 'Database update error', err });
               }
@@ -303,8 +304,8 @@ app.get('/users', (req, res) => {
               const saltRounds = 10;
               const hashedPassword = await bcrypt.hash(password, saltRounds);
   
-              const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber = ?, description = ? WHERE id = ?';
-              db.query(sql, [username, hashedPassword, email, gender, phoneWithoutSpaces, description, id], (err, result) => {
+              const sql = 'UPDATE users SET username = ?, password = ?, email = ?, gender = ?, phoneNumber = ?, description = ?, location = ? WHERE id = ?';
+              db.query(sql, [username, hashedPassword, email, gender, phoneWithoutSpaces, description, location, id], (err, result) => {
                   if (err) {
                       return res.status(500).json({ message: 'Database update error', err });
                   }
