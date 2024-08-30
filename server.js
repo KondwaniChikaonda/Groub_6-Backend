@@ -337,7 +337,7 @@ app.get('/users', (req, res) => {
 
 
 
-  //Get all products
+  //Get all products to the market
   app.get('/products', (req, res) => {
     const sql = `
       SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
