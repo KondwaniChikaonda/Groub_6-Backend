@@ -340,7 +340,7 @@ app.get('/users', (req, res) => {
   //Get all products
   app.get('/products', (req, res) => {
     const sql = `
-      SELECT p.*, u.phoneNumber, u.email AS email, u.username AS owner_username
+      SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
       FROM product p
       LEFT JOIN users u ON p.owner_id = u.id
       ORDER BY created_at DESC
