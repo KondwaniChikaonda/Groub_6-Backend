@@ -586,22 +586,15 @@ app.get('/products', async (req, res) => {
   }
 });
 
-
-
-
-// For handling shopping activities   
-
-
-
+  
 
 
 
 
 app.post('/orders', (req, res) => {
-  const { productId,Owner,buyerId, email } = req.body; // Assuming you pass userId along with productId
+  const { productId, Owner, buyerId, email } = req.body;
 
-
-
+  console.log(email);
 
   const query = 'INSERT INTO cart (product_id, owner_id, buyer_id) VALUES (?, ?, ?)';
   
@@ -609,33 +602,27 @@ app.post('/orders', (req, res) => {
     if (err) {
       return res.status(500).send(err);
     }
-    else{
-      res.status(200).json({ message: 'Product ordered Successfully!' });
 
+    
+    const mailOptions = {
+      from: MAILTRAP_USERNAME,
+      to: email,
+      subject: 'Received a Request From waiiona',
+      text: `You have received a request from waiiona market, please login to get in touch with your customer. Click the link to login: https://www.waiiona.store/Login`
+    };
 
-
-       
-  const mailOptions = {
-    from: MAILTRAP_USERNAME, // This can be any email
-    to: email,
-    subject: 'Received a Request From waiiona',
-    text: `You have received a request from waiiona market, please login to get in touch with your customer.Click the link to login: https://www.waiiona.store/Login`
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    console.log(email);
-    if (error) {
-      console.error('Error sending email:', error);
-      return res.status(500).json({ message: 'Error sending email', error });
-    }
-});
-
-
-
-    }
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        return res.status(500).json({ message: 'Error sending email', error });
+      }
+      
+      // If everything is successful
+      res.status(200).json({ message: 'Product ordered and email sent successfully!' });
+    });
   });
 });
-
 
 
 
