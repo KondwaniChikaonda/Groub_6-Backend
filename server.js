@@ -585,7 +585,26 @@ app.get('/products', async (req, res) => {
 
 
 app.post('/orders', (req, res) => {
-  const { productId,Owner,buyerId } = req.body; // Assuming you pass userId along with productId
+  const { productId,Owner,buyerId, email } = req.body; // Assuming you pass userId along with productId
+
+
+  const mailOptions = {
+    from: MAILTRAP_USERNAME, // This can be any email
+    to: email,
+    subject: 'Received a Request From waiiona',
+    text: `You have received a request from waiiona market, please login to get in touch with your customer.Click the link to login: https://www.waiiona.store/Login`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    console.log(email);
+    if (error) {
+      console.error('Error sending email:', error);
+      return res.status(500).json({ message: 'Error sending email', error });
+    }
+});
+
+
+
   const query = 'INSERT INTO cart (product_id, owner_id, buyer_id) VALUES (?, ?, ?)';
   
   db.query(query, [productId, Owner, buyerId], (err, result) => {
