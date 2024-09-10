@@ -607,7 +607,7 @@ app.post('/orders', (req, res) => {
     const mailOptions = {
       from: MAILTRAP_USERNAME,
       to: email,
-      subject: 'Received a Request From waiiona',
+      subject: 'Congratulations!, Received a Request in waiiona market',
       text: `You have received a request from waiiona market, please login to get in touch with your customer. Click the link to login: https://www.waiiona.store/Login`
     };
 
