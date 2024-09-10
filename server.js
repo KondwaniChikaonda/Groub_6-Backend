@@ -104,6 +104,19 @@ const authenticateToken = (req, res, next) => {
 
 
 
+
+
+
+
+const JWT_SECRET = process.env.JWT_SECRET ;
+const MAILTRAP_SMTP_SERVER = process.env.MAILTRAP_SMTP_SERVER;
+const MAILTRAP_SMTP_PORT = process.env.MAILTRAP_SMTP_PORT; // Mailtrap typically uses 587 for TLS
+const MAILTRAP_USERNAME = process.env.MAILTRAP_USERNAME;
+const MAILTRAP_PASSWORD = process.env.MAILTRAP_PASSWORD;
+
+
+
+
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
@@ -588,6 +601,20 @@ app.post('/orders', (req, res) => {
   const { productId,Owner,buyerId, email } = req.body; // Assuming you pass userId along with productId
 
 
+
+
+  const query = 'INSERT INTO cart (product_id, owner_id, buyer_id) VALUES (?, ?, ?)';
+  
+  db.query(query, [productId, Owner, buyerId], (err, result) => {
+    if (err) {
+      return res.status(500).send(err);
+    }
+    else{
+      res.status(200).json({ message: 'Product ordered Successfully!' });
+
+
+
+       
   const mailOptions = {
     from: MAILTRAP_USERNAME, // This can be any email
     to: email,
@@ -605,14 +632,6 @@ app.post('/orders', (req, res) => {
 
 
 
-  const query = 'INSERT INTO cart (product_id, owner_id, buyer_id) VALUES (?, ?, ?)';
-  
-  db.query(query, [productId, Owner, buyerId], (err, result) => {
-    if (err) {
-      return res.status(500).send(err);
-    }
-    else{
-      res.status(200).json({ message: 'Product ordered Successfully!' });
     }
   });
 });
@@ -1093,12 +1112,6 @@ app.get('/my-house', authenticateToken, (req, res) => {
 
 
 
-
-const JWT_SECRET = process.env.JWT_SECRET ;
-const MAILTRAP_SMTP_SERVER = process.env.MAILTRAP_SMTP_SERVER;
-const MAILTRAP_SMTP_PORT = process.env.MAILTRAP_SMTP_PORT; // Mailtrap typically uses 587 for TLS
-const MAILTRAP_USERNAME = process.env.MAILTRAP_USERNAME;
-const MAILTRAP_PASSWORD = process.env.MAILTRAP_PASSWORD;
 
 
 
