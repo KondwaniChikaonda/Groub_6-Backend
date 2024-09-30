@@ -390,13 +390,20 @@ app.get('/users', (req, res) => {
 
 
 
+app.post('/feedback', async(req,res) => {
+  
+  const {description} = req.body;
 
-
-
-
-
-
-
+  try {
+    // Insert into messages table
+      await db.execute('INSERT INTO notifications (description) VALUES (?)', [description]);
+   
+    res.status(201).json(insertedMessage);
+  } catch (err) {
+    console.error('Error inserting message:', err);
+    res.status(500).json({ error: 'Failed to send message' });
+  }
+   })
 
 
 
