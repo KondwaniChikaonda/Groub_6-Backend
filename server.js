@@ -568,33 +568,61 @@ app.get('/my-product', authenticateToken, (req, res) => {
 
 
   // Assuming you have a route like this in your Node.js backend
-
-app.get('/products', async (req, res) => {
-  const searchTerm = req.query.search || '';
-  try {
-    let products = await Product.findAll({
-      where: {
+  app.get('/products', async (req, res) => {
+    const searchTerm = req.query.search || '';
+    const category = req.query.category || '';
+  
+    try {
+      const whereClause = {
         [Op.or]: [
           { name: { [Op.like]: `%${searchTerm}%` } },
           { description: { [Op.like]: `%${searchTerm}%` } },
           { owner_username: { [Op.like]: `%${searchTerm}%` } },
-          { email: { [Op.like]: `%${searchTerm}%` } }
+          { email: { [Op.like]: `%${searchTerm}%` } },
+          { category: { [Op.like]: `%${searchTerm}%` } }
         ]
+      };
+  
+      // Add category filter if a category is provided
+      if (category) {
+        whereClause.category = category; // Assuming 'category' is a field in your Product model
       }
-    });
+  
+      let products = await Product.findAll({
+        where: whereClause
+      });
+  
+      // Transforming products to include likes count
+      products = products.map(product => ({
+        ...product.toJSON(),
+        likes: product.likes || 0 // Default to 0 if likes are null
+      }));
+  
+      res.json(products);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 
-    // Transforming products to include likes count
-    products = products.map(product => ({
-      ...product.toJSON(),
-      likes: product.likes || 0 // Default to 0 if likes are null
-    }));
 
-    res.json(products);
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 
