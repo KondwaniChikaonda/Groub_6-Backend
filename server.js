@@ -914,7 +914,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 
 app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) => {
-  const { name, price, description, status } = req.body;
+  const { name, price, description, status, category } = req.body;
   const picture = req.file ? req.file.path : null;
   const ownerId = req.user.id; // Extracted from token
 
@@ -925,19 +925,19 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
 
           const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724928038/rgtan5tzrqf4xfimgxnb.png';
 
-    const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [name, price, description, myPicture, status, ownerId], (err, result) => {
+    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, myPicture, status,category, ownerId], (err, result) => {
       if (err) throw err;
-      res.send({ id: result.insertId, name, price, description, myPicture, status });
+      res.send({ id: result.insertId, name, price, description, myPicture, status, category});
     });
 
   }
 
   else{
-    const sql = 'INSERT INTO product (name, price, description, picture, status, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [name, price, description, picture, status, ownerId], (err, result) => {
+    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    db.query(sql, [name, price, description, picture, status,category, ownerId], (err, result) => {
       if (err) throw err;
-      res.send({ id: result.insertId, name, price, description, picture, status });
+      res.send({ id: result.insertId, name, price, description, picture, status, category });
     });
 
   }
@@ -953,22 +953,22 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
 
 app.put('/my-product/:id', authenticateToken, upload.single('picture'), (req, res) => {
   const { id } = req.params;
-  const { name, price, description, status } = req.body;
+  const { name, price, description, status, category } = req.body;
   const picture = req.file ? req.file.path : null;
     
  if(!picture){
      
-  const sql = 'UPDATE product SET name = ?, price = ?, description = ?, status = ? WHERE id = ? AND owner_id = ?';
-  db.query(sql, [name, price, description,status, id, req.user.id], (err, result) => {
+  const sql = 'UPDATE product SET name = ?, price = ?, description = ?, status = ?, category = ? WHERE id = ? AND owner_id = ?';
+  db.query(sql, [name, price, description,status, category, id, req.user.id], (err, result) => {
     if (err) throw err;
-    res.send({ id, name, price, description, status });
+    res.send({ id, name, price, description, status, category });
   });
 
  }
   else{
 
-    const sql = 'UPDATE product SET name = ?, price = ?, description = ?, picture = ?, status = ? WHERE id = ? AND owner_id = ?';
-    db.query(sql, [name, price, description, picture, status, id, req.user.id], (err, result) => {
+    const sql = 'UPDATE product SET name = ?, price = ?, description = ?, picture = ?, status = ?, category =? WHERE id = ? AND owner_id = ?';
+    db.query(sql, [name, price, description, picture, status,category, id, req.user.id], (err, result) => {
       if (err) throw err;
       res.send({ id, name, price, description, picture, status });
     });
