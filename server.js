@@ -571,6 +571,8 @@ app.get('/my-product', authenticateToken, (req, res) => {
   app.get('/products', async (req, res) => {
     const searchTerm = req.query.search || '';
     const category = req.query.category || '';
+
+    console.log(category);
   
     try {
       const whereClause = {
