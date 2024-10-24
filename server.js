@@ -360,7 +360,7 @@ app.get('/products', (req, res) => {
     SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
     FROM product p
     LEFT JOIN users u ON p.owner_id = u.id
-    ${category ? 'WHERE p.category = ?' : ''}  // Add a WHERE clause if a category is specified
+    ${category ? 'WHERE p.category = ?' : ''}  
     ORDER BY p.created_at DESC
   `;
 
