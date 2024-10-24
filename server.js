@@ -350,19 +350,32 @@ app.get('/users', (req, res) => {
 
 
 
-  //Get all products to the market waiiona
-  app.get('/products', (req, res) => {
-    const sql = `
-      SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
-      FROM product p
-      LEFT JOIN users u ON p.owner_id = u.id
-      ORDER BY created_at DESC
-    `;
-    db.query(sql, (err, result) => {
-      if (err) throw err;
-      res.send(result);
-    });
+// Get all products for the market, optionally filtering by category
+app.get('/products', (req, res) => {
+  const category = req.query.category; // Get the category from query parameters
+  console.log(category);
+
+
+  const sql = `
+    SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
+    FROM product p
+    LEFT JOIN users u ON p.owner_id = u.id
+    ${category ? 'WHERE p.category = ?' : ''}  // Add a WHERE clause if a category is specified
+    ORDER BY p.created_at DESC
+  `;
+
+  const params = category ? [category] : []; // Set parameters for the query
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.error('Database query error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+    
+    // Send the result as JSON
+    res.status(200).json(result);
   });
+});
 
 
 
