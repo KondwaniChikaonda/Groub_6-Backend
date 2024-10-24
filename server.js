@@ -925,7 +925,7 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
 
           const myPicture = 'https://res.cloudinary.com/danbkh9uu/image/upload/v1724928038/rgtan5tzrqf4xfimgxnb.png';
 
-    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
     db.query(sql, [name, price, description, myPicture, status,category, ownerId], (err, result) => {
       if (err) throw err;
       res.send({ id: result.insertId, name, price, description, myPicture, status, category});
@@ -934,7 +934,7 @@ app.post('/my-product', authenticateToken, upload.single('picture'), (req, res) 
   }
 
   else{
-    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO product (name, price, description, picture, status, category, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
     db.query(sql, [name, price, description, picture, status,category, ownerId], (err, result) => {
       if (err) throw err;
       res.send({ id: result.insertId, name, price, description, picture, status, category });
