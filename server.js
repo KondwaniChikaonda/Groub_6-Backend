@@ -360,11 +360,11 @@ app.get('/products', (req, res) => {
     SELECT p.*, u.phoneNumber, u.location, u.description AS userDescription, u.email AS email, u.username AS owner_username
     FROM product p
     LEFT JOIN users u ON p.owner_id = u.id
-    ${category ? 'WHERE p.category = ?' : ''}  
+    ${category ? 'WHERE p.category = ?' : ''} 
     ORDER BY p.created_at DESC
   `;
 
-  const params = category ? [category] : []; // Set parameters for the query
+  const params = category ? [category] : []; // Set parameters for query
 
   db.query(sql, params, (err, result) => {
     if (err) {
