@@ -162,7 +162,7 @@ app.post('/login', (req, res) => {
     console.log(username);
 
     // Query to find the user by email
-    db.query('SELECT * FROM login WHERE email = ?', [username], async (err, result) => {
+    db.query('SELECT * FROM login WHERE registration_number = ?', [username], async (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
