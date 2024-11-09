@@ -290,6 +290,8 @@ app.post('/submit-form', (req, res) => {
       AcademicYear, YearOfStudy, Sex, PostalAddressParents, PhysicalAddressParents, HomeVillageParents, 
       DistrictParents, EmailParents, userId
     } = req.body;
+
+    console.log("The userId is "+ userId);
   
     
       // Insert into `studentpersonaldetails`
