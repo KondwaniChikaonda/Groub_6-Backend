@@ -156,14 +156,13 @@ app.post('/register', (req, res) => {
 });
 
 
-
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
     console.log("The user is "+username);
 
     // Query to find the user by email
-    db.query('SELECT * FROM login WHERE email = ?', [username], async (err, result) => {
+    db.query('SELECT * FROM login WHERE registration_number = ?', [username], async (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
@@ -185,12 +184,12 @@ app.post('/login', (req, res) => {
                 return;
             }
 
-            // Generate a JWT token
-            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-                expiresIn: 1200 // 20 minutes in seconds
+            // No JWT token here; just send the user details
+            res.status(200).send({
+                auth: true,
+                userId: user.id,       // Send the user id (or any other data you need)
+                registrationNumber: user.registration_number    // Optionally, send the user name or other details
             });
-
-            res.status(200).send({ auth: true, token });
         } catch (compareErr) {
             res.status(500).send('Server error');
         }
@@ -212,7 +211,8 @@ const otps = {}; // Store OTPs in-memory for simplicity (consider a more persist
 app.post('/send-otp', (req, res) => {
     const { registrationNumber, password, email} = req.body;
 
-
+    
+    console.log(email);
     
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
     otps[email] = otp;
@@ -278,6 +278,88 @@ app.post('/verify-otp', async (req, res) => {
 
 
 
+
+
+
+
+app.post('/submit-form', (req, res) => {
+    const {
+      SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, 
+      BankName, Branch, BankAccountNumber, BankAccountName, FullName, postalAddress, PhysicalAddress, 
+      HomeVillage, Occupation, PhoneNumberParents, UniversityName, ProgramOfStudy, RegistrationNumber, 
+      AcademicYear, YearOfStudy, Sex, PostalAddressParents, PhysicalAddressParents, HomeVillageParents, 
+      DistrictParents, EmailParents, userId
+    } = req.body;
+
+    console.log("The userId is "+ userId);
+  
+    
+      // Insert into `studentpersonaldetails`
+      db.query(`
+        INSERT INTO studentpersonaldetails (SurName, FirstName, OtherName, dob, Village, TraditionalAuthority, 
+        District, PostalAddress, PhoneNumber, Email, Sex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, Sex], (err, result) => {
+        if (err) {
+       
+            console.error('Error inserting personal details:', err);
+            return res.status(500).json({ message: 'An error occurred while inserting personal details.' });
+        
+        }
+
+  
+        // Insert into `studentbankdetails`
+        db.query(`
+          INSERT INTO studentbankdetails (user_id, BankName, Branch, BankAccountNumber, BankAccountName) 
+          VALUES (?, ?, ?, ?, ?)
+        `, [userId, BankName, Branch, BankAccountNumber, BankAccountName], (err) => {
+          if (err) {
+           
+              console.error('Error inserting bank details:', err);
+              return res.status(500).json({ message: 'An error occurred while inserting bank details.' });
+          
+          }
+  
+          // Insert into `parentguardiandetails`
+          db.query(`
+            INSERT INTO parentguardiandetails (user_id, FullName, Occupation, PostalAddressParents, 
+            PhysicalAddressParents, HomeVillageParents, DistrictParents, EmailParents, PhoneNumberParents) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [userId, FullName, Occupation, PostalAddressParents, PhysicalAddressParents, HomeVillageParents, 
+              DistrictParents, EmailParents, PhoneNumberParents], (err) => {
+            if (err) {
+            
+                console.error('Error inserting guardian details:', err);
+                return res.status(500).json({ message: 'An error occurred while inserting guardian details.' });
+           
+            }
+  
+            // Insert into `studentuniversitydetails`
+            db.query(`
+              INSERT INTO studentuniversitydetails (user_id, UniversityName, ProgramOfStudy, RegistrationNumber, 
+              AcademicYear, YearOfStudy) 
+              VALUES (?, ?, ?, ?, ?, ?)
+            `, [userId, UniversityName, ProgramOfStudy, RegistrationNumber, AcademicYear, YearOfStudy], (err) => {
+              if (err) {
+             
+                  console.error('Error inserting university details:', err);
+                  return res.status(500).json({ message: 'An error occurred while inserting university details.' });
+             
+              }
+  
+              // Commit the transaction if all queries succeed
+             
+                if (err) {
+                
+                    console.error('Error committing transaction:', err);
+                    return res.status(500).json({ message: 'An error occurred while committing the transaction.' });
+              
+                }
+                res.status(200).json({ message: 'Form submitted successfully!' });
+              });
+            });
+          });
+        });
+      });
 
 
 app.listen(port, () => {
