@@ -160,7 +160,7 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    console.log(username);
+    console.log("The user is "+username);
 
     // Query to find the user by email
     db.query('SELECT * FROM login WHERE email = ?', [username], async (err, result) => {
