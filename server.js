@@ -144,9 +144,9 @@ app.get('/', (req, res) => {
 
 
 app.post('/register', (req, res) => {
-    const { registrationNumber,email, password } = req.body;
+    const { registrationNumber,email, password, fullname } = req.body;
 
-    db.query('INSERT INTO login (registration_number,email,password) VALUES (?, ?, ?)', [registrationNumber, email, password], (err, result) => {
+    db.query('INSERT INTO login (registration_number, email, password, fullname) VALUES (?, ?, ?, ?)', [registrationNumber, email, password, fullname], (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
@@ -174,7 +174,7 @@ app.post('/login', (req, res) => {
         }
 
         const user = result[0];
-
+        console.log('User data:', user);
         try {
             // Compare the provided password with the stored hashed password
             const passwordMatch = await bcrypt.compare(password, user.password);
@@ -188,7 +188,8 @@ app.post('/login', (req, res) => {
             res.status(200).send({
                 auth: true,
                 userId: user.id,       // Send the user id (or any other data you need)
-                registrationNumber: user.registration_number    // Optionally, send the user name or other details
+                registrationNumber: user.registration_number,   // Optionally, send the user name or other details:
+                fullName: user.fullname,
             });
         } catch (compareErr) {
             res.status(500).send('Server error');
@@ -239,7 +240,9 @@ app.post('/send-otp', (req, res) => {
 
 
 app.post('/verify-otp', async (req, res) => {
-    const { registrationNumber, email, otp, password} = req.body;
+    const { registrationNumber, email, otp, password, fullname} = req.body;
+
+    console.log("Username: "+ fullname);
 
     console.log(otps[email]);
     console.log("Password received:", password);
@@ -254,8 +257,8 @@ app.post('/verify-otp', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, saltRounds);
 
             // Insert user into the database with the hashed password
-            db.query('INSERT INTO login (registration_number, password, email) VALUES (?, ?, ?)', 
-                [registrationNumber, hashedPassword, email], 
+            db.query('INSERT INTO login (registration_number, password, email, fullname) VALUES (?, ?, ?, ?)', 
+                [registrationNumber, hashedPassword, email, fullname], 
                 (err, result) => {
                     if (err) {
                         console.error('Error inserting user:', err);
@@ -297,8 +300,8 @@ app.post('/submit-form', (req, res) => {
       // Insert into `studentpersonaldetails`
       db.query(`
         INSERT INTO studentpersonaldetails (SurName, FirstName, OtherName, dob, Village, TraditionalAuthority, 
-        District, PostalAddress, PhoneNumber, Email, Sex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, Sex], (err, result) => {
+        District, PostalAddress, PhoneNumber, Email, Sex, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, Sex, userId], (err, result) => {
         if (err) {
        
             console.error('Error inserting personal details:', err);
@@ -365,3 +368,5 @@ app.post('/submit-form', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
+
