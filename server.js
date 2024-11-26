@@ -292,8 +292,8 @@ app.post('/submit-form', (req, res) => {
   // Insert into `studentpersonaldetails`
   db.query(`
     INSERT INTO studentpersonaldetails (SurName, FirstName, OtherName, dob, Village, TraditionalAuthority, 
-    District, PostalAddress, PhoneNumber, Email, Sex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, Sex], (err) => {
+    District, PostalAddress, PhoneNumber, Email, Sex, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [SurName, FirstName, OtherName, dob, Village, Traditional, District, PostalAddress, PhoneNumber, Email, Sex, userId], (err) => {
       if (err) {
           console.error('Error inserting personal details:', err);
           return res.status(500).json({ message: 'An error occurred while inserting personal details.' });
@@ -332,6 +332,26 @@ app.post('/submit-form', (req, res) => {
                       return res.status(500).json({ message: 'An error occurred while inserting university details.' });
                   }
 
+     
+                  
+             // Insert into `notifications`
+db.query(`
+  INSERT INTO notifications (user_id, message, is_read) 
+  VALUES (?, ?, ?)`,
+  
+  [
+  userId, 
+  'Your application for bonding has been successfully submitted.', // Example message
+  false // Default value for is_read (unread notification)
+], (err) => {
+    if (err) {
+        console.error('Error inserting notification:', err);
+        return res.status(500).json({ message: 'An error occurred while inserting notification.' });
+    }
+
+
+
+
 
 
                 
@@ -345,14 +365,62 @@ app.post('/submit-form', (req, res) => {
                           return res.status(500).json({ message: 'An error occurred while inserting loan amount details.' });
                       }
 
+
+
+
+
+
+                      
+                      db.query('SELECT email FROM login WHERE id = ?', [userId], (error, results) => {
+                        if (error) {
+                          console.error('Error fetching user email:', error);
+                          return res.status(500).json({ message: 'Error fetching user email', error });
+                        }
+                    
+                        if (results.length === 0) {
+                          return res.status(404).json({ message: 'User not found' });
+                        }         
+                    
+                        const { email} = results[0];
+
+                        const FullName = FirstName +" "+ SurName;
+                    
+                        // Configure email options
+                        const mailOptions = {
+                          from: MAILTRAP_USERNAME, 
+                          to: email,
+                          subject: 'Automated Loan Bonding System',
+                          text: `Congratulations ${FullName}, you have successfully submitted!`,
+                        };
+                    
+                        // Send email
+                        transporter.sendMail(mailOptions, (error, info) => {
+                          if (error) {
+                            console.error('Error sending email:', error);
+                            return res.status(500).json({ message: 'Error sending email', error });
+                          }
+                    
+                          console.log('Email sent:', info.response);
+                          res.status(200).json({ message: 'Email sent successfully' });
+                     
+                   
+
                       // Success
                       res.status(200).json({ message: 'Form submitted successfully!' });
+
+
+
+
+                        });
+                      }); 
+
                   });
               });
           });
       });
   });
 });
+})
 
 
 
@@ -415,6 +483,74 @@ app.post('/submit-form', (req, res) => {
 
 
 
+
+
+
+ app.get('/check-form-status/:userId', (req, res) => {
+        const { userId } = req.params;
+      
+        db.query('SELECT * FROM studentpersonaldetails WHERE user_id = ?', [userId], (err, results) => {
+          if (err) {
+            console.error('Error checking form status:', err);
+            return res.status(500).json({ message: 'An error occurred.' });
+          }
+      
+          if (results.length > 0) {
+            return res.status(200).json({ formFilled: true });
+          }
+      
+          res.status(200).json({ formFilled: false });
+        });
+      });
+      
+
+
+
+
+      app.get('/api/user/:userId', (req, res) => {
+        const { userId } = req.params;
+      
+        const query = 'SELECT * FROM login WHERE id = ?';
+        db.query(query, [userId], (err, results) => {
+          if (err) {
+            console.error('Error fetching user data:', err);
+            return res.status(500).json({ message: 'Error fetching user data' });
+          }
+      
+          if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+          }
+      
+          res.json(results[0]);
+        });
+      });
+
+
+
+
+
+
+
+
+
+
+
+      app.get('/api/notifications/:userId', (req, res) => {
+        const { userId } = req.params;
+      
+        db.query('SELECT * FROM notifications WHERE user_id = ?', [userId], (error, results) => {
+          if (error) {
+            console.error('Error fetching notifications:', error);
+            return res.status(500).json({ error: 'Failed to fetch notifications' });
+          }
+      
+          console.log('Fetched notifications:', results);
+          res.json({ notifications: results });
+        });
+      });
+      
+      
+      
 
 
 
