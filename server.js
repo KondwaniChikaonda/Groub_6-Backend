@@ -13,6 +13,7 @@ require('dotenv').config();
 const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
+const { Console } = require('console');
 
 
 
@@ -237,12 +238,13 @@ app.post('/send-otp', (req, res) => {
 
 
 app.post('/verify-otp', async (req, res) => {
-    const { registrationNumber, email, otp, password, fullname} = req.body;
+    const { registrationNumber, email, otp, password, fullname, selectedInstitution} = req.body;
 
     console.log("Username: "+ fullname);
 
     console.log(otps[email]);
     console.log("Password received:", password);
+    console.log(selectedInstitution);
 
 
     if (otps[email] === otp) {
@@ -254,8 +256,8 @@ app.post('/verify-otp', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, saltRounds);
 
             // Insert user into the database with the hashed password
-            db.query('INSERT INTO login (registration_number, password, email, fullname) VALUES (?, ?, ?, ?)', 
-                [registrationNumber, hashedPassword, email, fullname], 
+            db.query('INSERT INTO login (registration_number, password, email, fullname, institution) VALUES (?, ?, ?, ?, ?)', 
+                [registrationNumber, hashedPassword, email, fullname, selectedInstitution], 
                 (err, result) => {
                     if (err) {
                         console.error('Error inserting user:', err);
@@ -280,6 +282,24 @@ app.post('/verify-otp', async (req, res) => {
 
 
 
+app.post("/upload-image",  (req, res) => {
+
+    
+
+  if (req.file) {
+    console.log("Uploaded image:", req.file);
+ 
+    res.status(200).json({
+      message: "Image uploaded successfully", 
+    });
+  } else {
+    res.status(400).json({ message: "No image uploaded" });
+  }
+});
+
+
+
+
 
 app.post('/submit-form', (req, res) => {
   const {
@@ -287,10 +307,10 @@ app.post('/submit-form', (req, res) => {
     BankName, Branch, BankAccountNumber, BankAccountName, FullName, postalAddress, PhysicalAddress, 
     HomeVillage, Occupation, PhoneNumberParents, UniversityName, ProgramOfStudy, RegistrationNumber, 
     AcademicYear, YearOfStudy, Sex, PostalAddressParents, PhysicalAddressParents, HomeVillageParents, 
-    DistrictParents, EmailParents, userId, Tuition, Upkeep // Added tuituion and upkeep
+    DistrictParents, EmailParents, userId, Tuition, Upkeep// Added tuituion and upkeep
   } = req.body;
 
-  console.log("The userId is " + userId);
+
 
   // Insert into `studentpersonaldetails`
   db.query(`
