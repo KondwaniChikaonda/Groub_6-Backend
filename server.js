@@ -13,6 +13,7 @@ require('dotenv').config();
 const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcryptjs'); // Use bcryptjs instead of bcrypt
+const { Console } = require('console');
 
 
 
@@ -141,9 +142,9 @@ app.get('/', (req, res) => {
 
 
 app.post('/register', (req, res) => {
-    const { registrationNumber,email, password } = req.body;
+    const { registrationNumber,email, password, fullname } = req.body;
 
-    db.query('INSERT INTO login (registration_number,email,password) VALUES (?, ?, ?)', [registrationNumber, email, password], (err, result) => {
+    db.query('INSERT INTO login (registration_number, email, password, fullname) VALUES (?, ?, ?, ?)', [registrationNumber, email, password, fullname], (err, result) => {
         if (err) {
             res.status(500).send('Server error');
             return;
@@ -156,7 +157,7 @@ app.post('/register', (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
-    console.log(username);
+    console.log("The user is "+username);
 
     // Query to find the user by email
     db.query('SELECT * FROM login WHERE registration_number = ?', [username], async (err, result) => {
@@ -171,7 +172,7 @@ app.post('/login', (req, res) => {
         }
 
         const user = result[0];
-
+        console.log('User data:', user);
         try {
             // Compare the provided password with the stored hashed password
             const passwordMatch = await bcrypt.compare(password, user.password);
@@ -185,7 +186,8 @@ app.post('/login', (req, res) => {
             res.status(200).send({
                 auth: true,
                 userId: user.id,       // Send the user id (or any other data you need)
-                registrationNumber: user.registration_number    // Optionally, send the user name or other details
+                registrationNumber: user.registration_number,   // Optionally, send the user name or other details:
+                fullName: user.fullname,
             });
         } catch (compareErr) {
             res.status(500).send('Server error');
@@ -236,10 +238,13 @@ app.post('/send-otp', (req, res) => {
 
 
 app.post('/verify-otp', async (req, res) => {
-    const { registrationNumber, email, otp, password} = req.body;
+    const { registrationNumber, email, otp, password, fullname, selectedInstitution} = req.body;
+
+    console.log("Username: "+ fullname);
 
     console.log(otps[email]);
     console.log("Password received:", password);
+    console.log(selectedInstitution);
 
 
     if (otps[email] === otp) {
@@ -251,8 +256,8 @@ app.post('/verify-otp', async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, saltRounds);
 
             // Insert user into the database with the hashed password
-            db.query('INSERT INTO login (registration_number, password, email) VALUES (?, ?, ?)', 
-                [registrationNumber, hashedPassword, email], 
+            db.query('INSERT INTO login (registration_number, password, email, fullname, institution) VALUES (?, ?, ?, ?, ?)', 
+                [registrationNumber, hashedPassword, email, fullname, selectedInstitution], 
                 (err, result) => {
                     if (err) {
                         console.error('Error inserting user:', err);
@@ -277,6 +282,24 @@ app.post('/verify-otp', async (req, res) => {
 
 
 
+app.post("/upload-image",  (req, res) => {
+
+    
+
+  if (req.file) {
+    console.log("Uploaded image:", req.file);
+ 
+    res.status(200).json({
+      message: "Image uploaded successfully", 
+    });
+  } else {
+    res.status(400).json({ message: "No image uploaded" });
+  }
+});
+
+
+
+
 
 app.post('/submit-form', (req, res) => {
   const {
@@ -284,10 +307,10 @@ app.post('/submit-form', (req, res) => {
     BankName, Branch, BankAccountNumber, BankAccountName, FullName, postalAddress, PhysicalAddress, 
     HomeVillage, Occupation, PhoneNumberParents, UniversityName, ProgramOfStudy, RegistrationNumber, 
     AcademicYear, YearOfStudy, Sex, PostalAddressParents, PhysicalAddressParents, HomeVillageParents, 
-    DistrictParents, EmailParents, userId, Tuition, Upkeep // Added tuituion and upkeep
+    DistrictParents, EmailParents, userId, Tuition, Upkeep// Added tuituion and upkeep
   } = req.body;
 
-  console.log("The userId is " + userId);
+
 
   // Insert into `studentpersonaldetails`
   db.query(`
@@ -301,9 +324,11 @@ app.post('/submit-form', (req, res) => {
 
       // Insert into `studentbankdetails`
       db.query(`
+
         INSERT INTO studentbankdetails (user_id, BankName, Branch, BankAccountNumber, BankAccountName) 
         VALUES (?, ?, ?, ?, ?)
       `, [userId, BankName, Branch, BankAccountNumber, BankAccountName], (err) => {
+
           if (err) {
               console.error('Error inserting bank details:', err);
               return res.status(500).json({ message: 'An error occurred while inserting bank details.' });
@@ -620,3 +645,5 @@ app.post('/api/users/reset-password', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
+
